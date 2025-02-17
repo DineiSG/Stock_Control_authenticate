@@ -20,11 +20,14 @@ public class UsersService {
     }
 
     public Optional<Users> getUsersByNome(String nome) {
-        return Optional.empty();
+        return repository.findByNome(nome);
     }
 
     public Users insert(Users user) {
         user.setSenha(passwordEncoder.encode(user.getSenha()));
         return repository.save(user);
+    }
+
+    public Optional<Users> getUsersByLogin(String login) { return repository.findByLogin(login);
     }
 }
