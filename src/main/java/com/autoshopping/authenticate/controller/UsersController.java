@@ -6,6 +6,8 @@ import com.autoshopping.authenticate.service.JwtService;
 import com.autoshopping.authenticate.service.UsersService;
 import com.autoshopping.authenticate.token.JwtTokenProvider;
 import com.autoshopping.authenticate.user.Users;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +23,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v1/usuario")
 public class UsersController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UsersController.class);
 
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -70,6 +74,9 @@ public class UsersController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
+
+        logger.info("Login realizado pelo usuario {}.", loginRequest);
+
         Users user = usersRepository.findByLogin(loginRequest.login())
                 .orElseThrow(()-> new UsernameNotFoundException("Usuario nao encontrado."));
 
@@ -84,26 +91,10 @@ public class UsersController {
         Authentication authenticationRequest =
                 new UsernamePasswordAuthenticationToken(loginRequest.login(), loginRequest.senha());
         Authentication authenticationResponse = authenticationManager.authenticate(authenticationRequest);
-
-        String jwtToken = jwtTokenProvider.generateToken(authenticationResponse);
-
+        String jwtToken = jwtTokenProvider.generateToken(authenticationResponse, usersRepository);
         System.out.println("Token gerado: " +jwtToken);
-
         return ResponseEntity.ok(new JwtResponse(jwtToken));
     }
-
-    @PostMapping("/test-password")
-    public ResponseEntity<?> testPassword(@RequestBody LoginRequest loginRequest){
-        Optional <Users> usuario = service.getUsersByLogin(loginRequest.login());
-
-        if(usuario.isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario não encontrado");
-        }
-
-        boolean matches = passwordEncoder.matches(loginRequest.senha(), usuario.get().getSenha());
-        return ResponseEntity.ok("Senha correta ? " +matches);
-    }
-
 
     public record LoginRequest(String login, String senha){}
 
