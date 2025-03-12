@@ -13,11 +13,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Optional;
 
 @RestController
@@ -59,19 +59,19 @@ public class UsersController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity <String>post(@RequestBody Users user){
-        
-        String hashedPassword = passwordEncoder.encode(user.getSenha());
-        user.setSenha(hashedPassword);
-        System.out.println("Senha criptografada: " + hashedPassword);
-        System.out.println("Senha original: " + user.getSenha());
-        Users users =service.insert(user);
-        return ResponseEntity.ok("Cadastro de usuario realizado com sucesso");
+    //Criar usuario
+    @PostMapping("/create-user")
+    public ResponseEntity<String> post(@RequestBody Users user) {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+        user.setLogin(user.getLogin());
+        user.setSenha(encoder.encode(user.getSenha())); // Criptografa a senha corretamente
+        usersRepository.save(user);
 
+        return ResponseEntity.ok("Usuário criado com sucesso!");
     }
 
+    //Logar usuario
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
 
@@ -94,6 +94,8 @@ public class UsersController {
         String jwtToken = jwtTokenProvider.generateToken(authenticationResponse, usersRepository);
         System.out.println("Token gerado: " +jwtToken);
         return ResponseEntity.ok(new JwtResponse(jwtToken));
+
+
     }
 
     public record LoginRequest(String login, String senha){}

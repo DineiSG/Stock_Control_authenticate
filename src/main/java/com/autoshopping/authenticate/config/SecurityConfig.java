@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,6 +21,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
 import javax.crypto.spec.SecretKeySpec;
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -41,7 +45,7 @@ public class SecurityConfig {
                 .cors(withDefaults()) // Substitui cors() por withDefaults()
                 .csrf(csrf -> csrf.disable()) // Desabilite CSRF se não for necessário
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/usuario", "/api/v1/usuario/login", "/api/v1/usuario/test-password").permitAll() // Permitir acesso público ao endpoint de cadastro
+                        .requestMatchers(HttpMethod.POST, "/api/v1/usuario", "/api/v1/usuario/login", "/api/v1/usuario/create-user").permitAll() // Permitir acesso público ao endpoint de cadastro
                         .anyRequest().authenticated() // Outros endpoints exigem autenticação
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -55,26 +59,29 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-      return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder passwordEncoder) throws Exception {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(customUserDetailsService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(authenticationProvider);
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsFilter corsFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // Domínio do frontend
-        configuration.addAllowedMethod("*"); // Permite todos os métodos (GET, POST, etc.)
-        configuration.addAllowedHeader("*"); // Permite todos os cabeçalhos
-        configuration.setAllowCredentials(true); // Permite cookies ou credenciais
+        configuration.addAllowedOrigin("http://localhost:3000"); // Permitir apenas o frontend React
+        configuration.addAllowedMethod("*"); // Permitir todos os métodos (GET, POST, PUT, DELETE, etc.)
+        configuration.addAllowedHeader("*"); // Permitir todos os cabeçalhos
+        configuration.setAllowCredentials(true); // Permitir cookies e autenticação
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica a configuração para todos os endpoints
-        return source;
+        source.registerCorsConfiguration("/**", configuration); // Aplica a configuração a todas as rotas
+        return new CorsFilter(source);
     }
 }
