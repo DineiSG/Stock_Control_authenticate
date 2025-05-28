@@ -18,7 +18,6 @@ public class CustomUserDetailsService implements UserDetailsService{
 
     public CustomUserDetailsService(UsersRepository usersRepository){
         this.usersRepository = usersRepository;
-
     }
 
     @Override
@@ -26,9 +25,9 @@ public class CustomUserDetailsService implements UserDetailsService{
         Users user= usersRepository.findByLogin(login)
                         .orElseThrow(() -> new UsernameNotFoundException("Usuário nao encontrado"));
 
-        System.out.println("Buscando usuariio: " +login);
+        System.out.println("Buscando usuario: " +login);
         System.out.println("Usuário encontrado: " + user.getLogin());
-        System.out.println("Senha armazenada no banco: " + user.getSenha());
+
 
         return new org.springframework.security.core.userdetails.User(
                 user.getLogin(),

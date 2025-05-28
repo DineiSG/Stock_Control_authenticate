@@ -75,36 +75,26 @@ public class UsersController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
 
-        logger.info("Login realizado pelo usuario {}.", loginRequest);
-
         Users user = usersRepository.findByLogin(loginRequest.login())
                 .orElseThrow(()-> new UsernameNotFoundException("Usuario nao encontrado."));
 
         System.out.println("Tentando login para: "+loginRequest.login());
-        System.out.println("Senha digitada: "+loginRequest.senha());
-        System.out.println("Senha armazenada: "+ user.getSenha());
+
 
         if(!passwordEncoder.matches(loginRequest.senha(), user.getSenha())){
             System.out.println(" SENHA INCORRETA !");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("SENHA INCORRETA !");
+        }else{
+            System.out.println("Login bem sucedido.");
         }
         Authentication authenticationRequest =
                 new UsernamePasswordAuthenticationToken(loginRequest.login(), loginRequest.senha());
         Authentication authenticationResponse = authenticationManager.authenticate(authenticationRequest);
         String jwtToken = jwtTokenProvider.generateToken(authenticationResponse, usersRepository);
-        System.out.println("Token gerado: " +jwtToken);
         return ResponseEntity.ok(new JwtResponse(jwtToken));
-
-
     }
 
     public record LoginRequest(String login, String senha){}
 
     public record JwtResponse(String token){};
-
-
-
-
-
-
 }

@@ -37,7 +37,7 @@ public class JwtAuthFilter extends GenericFilterBean {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
             String token = authHeader.substring(7);
-            System.out.println("Token recebido: " + token);
+
 
             if (jwtService.validateToken(token)) {
                 Claims claims = jwtService.extractClaims(token);

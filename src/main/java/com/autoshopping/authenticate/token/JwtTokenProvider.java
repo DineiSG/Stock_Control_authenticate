@@ -18,9 +18,11 @@ public class JwtTokenProvider {
 
     public String generateToken (Authentication authentication, UsersRepository usersRepository){
         String username = authentication.getName();
+        //Buscando usuario no banco de dados pelo login
         Users user = usersRepository.findByLogin(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
 
+        //Construindo um token jwt
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", user.getTipo())
@@ -30,3 +32,5 @@ public class JwtTokenProvider {
                 .compact();
     }
 }
+
+
